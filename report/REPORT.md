@@ -38,27 +38,32 @@
 Chỉ dùng ảnh `sample_id = traffic`, lấy dòng `rank = 1`.
 
 1. Chép record hạng 1: `class_id`= 468; `class_name`= cab ; `rank`=1 ; `score`=	0.510915 ; `taxonomy_name`= ImageNet-1K
+
 2. Record này nói về **cả bức ảnh** hay về **một vật thể riêng** trong ảnh? Vì sao bạn nghĩ vậy?
 Đây là kết quả phân loại cho toàn bộ bức ảnh (Image Classification), không phải kết quả nhận diện một vật thể riêng biệt.
 
 Model phân tích nội dung tổng thể của ảnh và đưa ra một lớp đại diện là cab. Mặc dù trong ảnh có nhiều phương tiện giao thông như xe buýt, ô tô và xe tải, model không tạo ra nhãn riêng cho từng phương tiện mà đưa ra một kết quả phân loại chung cho ảnh.
+
 3. Danh sách tên lớp (class list) do đâu mà có: model tự nghĩ ra, hay đi kèm taxonomy/checkpoint?
 Danh sách tên lớp không phải do model tự nghĩ ra. Nó được xác định bởi taxonomy (hệ thống phân loại lớp) mà model được huấn luyện theo.
 
 Trong trường hợp này, checkpoint yolo11n-cls.pt sử dụng taxonomy ImageNet-1K, bao gồm danh sách các lớp đã được định nghĩa trước.
 
 Khi dự đoán, model tính toán điểm số cho các lớp có sẵn trong taxonomy và lựa chọn những lớp có score cao nhất.
+
 4. Vì sao cần ghi cả `class_id`, `class_name` và `taxonomy_name`, không chỉ ghi mỗi tên lớp?
 Cần lưu cả ba trường để đảm bảo khả năng định danh, đối chiếu và quản lý nhãn một cách nhất quán.
 - class_id: Mã định danh của lớp, giúp hệ thống tham chiếu đến lớp cụ thể mà không phụ thuộc vào cách viết tên.
 - class_name: Tên lớp giúp con người đọc và hiểu nội dung dự đoán.
 - taxonomy_name: Xác định hệ thống phân loại mà lớp đó thuộc về, tránh nhầm lẫn khi các taxonomy khác nhau có thể sử dụng cùng tên hoặc cách đánh số lớp khác nhau.
+
 5. Nếu trong ảnh có nhiều vật / nhiều chủ đề, guideline cần nói rõ điều gì để người gán nhãn chọn **một** lớp?
 Guideline cần quy định rõ tiêu chí xác định chủ đề hoặc đối tượng chính của bức ảnh, chẳng hạn như vật thể chiếm ưu thế, đối tượng được tập trung thể hiện hoặc mục đích chính của bức ảnh.
 
 Ngoài ra, cần quy định thứ tự ưu tiên khi có nhiều đối tượng cùng xuất hiện, cách xử lý trường hợp không xác định được chủ thể chính và trường hợp ảnh không phù hợp với bất kỳ lớp nào trong taxonomy.
 
 Nếu trường hợp không rõ ràng hoặc nằm ngoài phạm vi hướng dẫn, annotator cần thực hiện escalation thay vì tự ý lựa chọn một lớp.
+
 6. Vì sao không được lấy `score` của model làm ground truth?
 Score là mức độ tin cậy của model đối với kết quả dự đoán, không phải nhãn đúng được xác nhận bởi con người.
 
@@ -75,10 +80,12 @@ Chỉ dùng ảnh `sample_id = kitchen`. Chọn **một** record.
 Số lượng prediction theo ngưỡng: xem output ô so sánh `0.20` / `0.35` / `0.60` trong notebook.
 
 1. Chép một record: `class_name`=person ; `score`=0.912625 ; `bbox_xyxy`=[385.33, 69.24, 498.92, 348.92] ; `bbox_width`=113.58 ; `bbox_height`=279.68
+
 2. Giải thích box bằng lời thường: góc trên-trái ở đâu, góc dưới-phải ở đâu, rộng/cao bao nhiêu pixel?
 Bounding box được biểu diễn bằng bốn tọa độ [x1, y1, x2, y2], trong đó (x1, y1) là góc trên bên trái và (x2, y2) là góc dưới bên phải của box. Tọa độ được tính theo pixel, với gốc tọa độ nằm ở góc trên bên trái ảnh.
 Đây là bounding box của người đứng ở khu vực giữa, hơi lệch về bên phải ảnh, không phải bounding box của toàn bộ cảnh nhà bếp.
 Với record đã chọn, góc trên bên trái có tọa độ (385.33, 69.24), góc dưới bên phải có tọa độ (498.92, 348.92). Box có chiều rộng khoảng 113.58 pixel và chiều cao 279.68 pixel, bao quanh người đứng ở giữa ảnh.
+
 3. Chọn hai ngưỡng (vd. 0.20 và 0.60). Mỗi ngưỡng có bao nhiêu prediction?
 Threshold 0.35: 11 prediction.
 
@@ -86,10 +93,13 @@ Threshold 0.60: 6 prediction.
 
 Khi tăng threshold từ 0.35 lên 0.60, số lượng prediction giảm từ 11 xuống 6 vì các dự đoán có score thấp hơn 0.60 bị loại bỏ.
 Threshold là ngưỡng confidence dùng để lọc prediction. Ngưỡng càng cao thì càng nhiều prediction có score thấp bị loại bỏ. Tuy nhiên, số lượng prediction giảm không đồng nghĩa tất cả prediction còn lại đều chính xác hơn về ground truth.
+
 4. Khi hạ ngưỡng (giữ nhiều hộp hơn), người **reviewer** phải làm thêm việc gì?
 Khi hạ threshold, số lượng prediction được giữ lại tăng lên, bao gồm cả những dự đoán có score thấp và những trường hợp có khả năng nhận diện sai cao hơn. Vì vậy, reviewer cần dành thêm thời gian kiểm tra từng prediction để xác định class có chính xác không, bounding box có bao quanh đúng vật thể không, có prediction trùng lặp hoặc nhận diện nhầm không. Reviewer cũng cần chú ý những vật thể thực tế bị model bỏ sót và yêu cầu chỉnh sửa hoặc gán nhãn bổ sung khi cần thiết.
+
 5. Viết **một quy tắc box** để người gán nhãn làm theo (áp dụng được cho nhiều ảnh, không chỉ ảnh này).
 Annotator cần vẽ bounding box bao quanh toàn bộ phần vật thể có thể quan sát được trong ảnh, đảm bảo box sát với ranh giới vật thể nhất có thể và không bao gồm quá nhiều vùng nền xung quanh. Mỗi vật thể riêng biệt phải có một bounding box riêng, kể cả khi nhiều vật thể nằm gần hoặc chồng lấn nhau. Đối với vật thể bị che khuất hoặc bị cắt khỏi mép ảnh, cần tuân thủ quy tắc xử lý đã được quy định trong guideline.
+
 6. Trên ảnh `kitchen`, chỉ ra **một** vật bị che khuất hoặc cắt mép. Bạn sẽ viết thành quy tắc trong guideline, hay đưa lên hỏi Lab Coach (escalation)? Vì sao?
 Tôi chọn trường hợp người xuất hiện một phần ở mép trái ảnh. Đây là đối tượng bị cắt bởi ranh giới ảnh, chỉ có một phần cơ thể được quan sát.
 
@@ -121,8 +131,10 @@ instance_id dùng để phân biệt từng đối tượng riêng biệt trong 
 Ví dụ, nếu trong ảnh có ba người thì cả ba đều có cùng class_id và class_name = person, nhưng mỗi người sẽ có một instance_id khác nhau.
 
 instance_id không phải class ID vì nó không đại diện cho loại đối tượng. Nó cũng không phải tracking ID vì bài toán này chỉ phân đoạn đối tượng trên một ảnh đơn, không theo dõi đối tượng qua nhiều frame hoặc video.
+
 4. Viết **một quy tắc vẽ biên mask** để người gán nhãn làm theo.
 Annotator phải vẽ đường biên mask sát với ranh giới thực tế của từng vật thể, chỉ bao gồm những vùng có thể xác định là thuộc về vật thể và không bao gồm background hoặc các vật thể khác. Đối với các vật thể riêng biệt nằm gần hoặc tiếp xúc nhau, cần tạo mask riêng cho từng instance. Khi vật thể bị che khuất, chỉ gán nhãn phần có thể quan sát được theo quy định của dự án, không tự suy đoán phần bị che khuất.
+
 5. Trên ảnh `kitchen`, chỉ ra **một** chỗ biên mờ / hai vật chạm nhau / bị che. Bạn dùng guideline hay escalation? Vì sao?
 Tôi chọn trường hợp người đứng giữa ảnh và chiếc chảo treo phía sau, gần vùng vai và đầu người. Một phần đường biên giữa hai đối tượng bị che khuất nên không thể quan sát trực tiếp toàn bộ ranh giới thực tế.
 
